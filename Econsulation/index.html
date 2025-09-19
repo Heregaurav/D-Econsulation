@@ -36,14 +36,15 @@
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 antialiased">
-    <div id="root" class="flex h-screen">
-        <!-- Left sidebar – drafts -->
-        <aside class="w-72 bg-slate-900 text-slate-100 flex flex-col shadow-lg">
+    <div id="root" class="flex flex-col lg:flex-row h-screen">
+
+        <!-- Left sidebar – drafts (hidden on small screens, shown on large) -->
+        <aside id="sidebar" class="hidden lg:flex w-72 bg-slate-900 text-slate-100 flex-col shadow-lg transition-all duration-300">
             <div class="p-6 border-b border-slate-700">
                 <h1 class="text-3xl font-serif font-semibold text-white">E-Consultation</h1>
                 <p class="text-xs text-slate-400 mt-1">Sentiment Analysis</p>
             </div>
-            <div id="draft-list" class="flex-1 overflow-y-auto"></div>
+            <div id="draft-list-desktop" class="flex-1 overflow-y-auto"></div>
             <div class="p-6 border-t border-slate-700">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-indigo-700 text-white flex items-center justify-center text-sm font-bold shrink-0 shadow-md">A</div>
@@ -56,28 +57,40 @@
         </aside>
 
         <!-- Right area – tabs + content -->
-        <div class="flex-1 flex flex-col">
-            <!-- top bar -->
-            <header class="bg-white border-b border-gray-100 px-8 py-6 shadow-sm flex items-center justify-between">
-                <div>
-                    <h2 id="draft-title" class="text-2xl font-bold text-gray-800"></h2>
-                    <p id="draft-dates" class="text-sm text-gray-500 mt-1"></p>
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top bar -->
+            <header class="bg-white border-b border-gray-100 px-4 sm:px-8 py-4 sm:py-6 shadow-sm flex items-center justify-between flex-wrap gap-4">
+                <div class="flex items-center gap-4">
+                    <!-- Mobile dropdown for drafts -->
+                    <div class="lg:hidden relative">
+                        <button id="drafts-toggle" class="px-4 py-2 text-sm rounded-xl font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+                            Drafts
+                            <svg class="ml-1 w-4 h-4 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div id="drafts-menu" class="absolute z-50 top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 hidden">
+                            <!-- Draft list will be rendered here via JS -->
+                        </div>
+                    </div>
+                    <div>
+                        <h2 id="draft-title" class="text-lg sm:text-2xl font-bold text-gray-800"></h2>
+                        <p id="draft-dates" class="text-xs sm:text-sm text-gray-500 mt-1"></p>
+                    </div>
                 </div>
-                <nav class="flex gap-2 p-1 bg-gray-100 rounded-xl">
-                    <button id="tab-dashboard" data-tab="dashboard" class="px-5 py-2 text-sm rounded-lg font-medium transition-colors bg-indigo-700 text-white shadow-md hover:bg-indigo-800">Dashboard</button>
-                    <button id="tab-comments" data-tab="comments" class="px-5 py-2 text-sm rounded-lg font-medium transition-colors text-gray-600 hover:bg-white">Comments</button>
-                    <button id="tab-analytics" data-tab="analytics" class="px-5 py-2 text-sm rounded-lg font-medium transition-colors text-gray-600 hover:bg-white">Analytics</button>
-                    <button id="tab-settings" data-tab="settings" class="px-5 py-2 text-sm rounded-lg font-medium transition-colors text-gray-600 hover:bg-white">Settings</button>
+                <nav class="flex flex-wrap justify-center gap-2 p-1 bg-gray-100 rounded-xl">
+                    <button id="tab-dashboard" data-tab="dashboard" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors bg-indigo-700 text-white shadow-md hover:bg-indigo-800">Dashboard</button>
+                    <button id="tab-comments" data-tab="comments" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors text-gray-600 hover:bg-white">Comments</button>
+                    <button id="tab-analytics" data-tab="analytics" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors text-gray-600 hover:bg-white">Analytics</button>
+                    <button id="tab-settings" data-tab="settings" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors text-gray-600 hover:bg-white">Settings</button>
                 </nav>
             </header>
 
-            <!-- content -->
-            <main id="main-content" class="flex-1 p-8 overflow-auto"></main>
+            <!-- Content area -->
+            <main id="main-content" class="flex-1 p-4 sm:p-8 overflow-y-auto"></main>
         </div>
     </div>
 
     <script>
-        const Card = (children, className = '') => `<div class="bg-white rounded-2xl p-6 shadow-md border border-gray-100 transition-all duration-300 hover:shadow-xl ${className}">${children}</div>`;
+        const Card = (children, className = '') => `<div class="bg-white rounded-2xl p-4 sm:p-6 shadow-md border border-gray-100 transition-all duration-300 hover:shadow-xl ${className}">${children}</div>`;
         const Pill = (children, onClick = '', className = '') => `<span onclick="${onClick}" class="px-3 py-1 text-xs rounded-full font-semibold cursor-pointer transition-colors duration-200 ${className}">${children}</span>`;
         const Btn = (children, onClick = '', className = '') => `<button onclick="${onClick}" class="flex items-center gap-1 px-4 py-2 text-sm rounded-xl font-medium border border-transparent bg-white text-gray-700 transition-all duration-300 hover:bg-gray-100 hover:shadow-md active:scale-95 ${className}">${children}</button>`;
 
@@ -276,6 +289,8 @@
         let drafts = initialDrafts;
         let activeDraftId = drafts[0].id;
         let filteredSentiment = null;
+        let isDraftsMenuOpen = false;
+
         let chatMessages = {
             [drafts[0].id]: [
                 { id: 1, type: 'bot', message: 'Hello! I’m here to help you with legal guidance. Ask me anything about laws and regulations.' },
@@ -314,8 +329,8 @@
             }, 1000);
         }
 
-        function renderDraftList() {
-            const listEl = document.getElementById('draft-list');
+        function renderDraftList(targetId) {
+            const listEl = document.getElementById(targetId);
             const draftHtml = drafts.map(d => {
                 const isActive = activeDraftId === d.id;
                 return `
@@ -343,12 +358,28 @@
                 </div>
             `;
         }
-        
+
+        function renderMobileDraftMenu() {
+            const menuEl = document.getElementById('drafts-menu');
+            const menuItemsHtml = drafts.map(d => `
+                <div onclick="setActiveDraft(${d.id})" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
+                    ${d.title}
+                </div>
+            `).join('');
+            menuEl.innerHTML = menuItemsHtml;
+        }
+
+        function toggleDraftsMenu() {
+            isDraftsMenuOpen = !isDraftsMenuOpen;
+            document.getElementById('drafts-menu').classList.toggle('hidden', !isDraftsMenuOpen);
+        }
+
         function setActiveDraft(id) {
             activeDraftId = id;
             filteredSentiment = null;
             renderContent();
-            renderDraftList();
+            renderDraftList('draft-list-desktop');
+            toggleDraftsMenu();
         }
 
         function setFilteredSentimentAndTab(sentiment, tab) {
@@ -376,7 +407,7 @@
                     Citizens largely welcome the direction of <span class="font-bold text-gray-800">${draft.title}</span>. Key positives:
                     affordability, wider coverage. Key concerns: implementation timeline, rural reach.
                 </p>
-                <div class="flex items-center gap-3 mt-3">
+                <div class="flex flex-wrap items-center gap-2 mt-3">
                     ${Pill(`${positivePercentage} % Positive`, `setFilteredSentimentAndTab('Positive', 'comments')`, `
                       ${filteredSentiment === 'Positive' ? 'bg-teal-600 text-white' : 'bg-teal-50 text-teal-700 border border-teal-100 hover:bg-teal-100'}
                     `)}
@@ -398,7 +429,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-500">${s.title}</p>
-                            <p class="text-4xl font-bold text-gray-800 mt-1">${s.value}</p>
+                            <p class="text-3xl sm:text-4xl font-bold text-gray-800 mt-1">${s.value}</p>
                             <p class="text-xs ${s.trend === 'up' ? 'text-teal-600' : 'text-red-600'}">
                                 <span class="font-semibold">${s.change}</span> since last week
                             </p>
@@ -472,7 +503,7 @@
                     <div id="chat-messages" class="h-72 border rounded-xl bg-gray-50 p-4 overflow-y-auto mb-4 text-sm space-y-3 shadow-inner">
                         ${draftChatHtml}
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex flex-col sm:flex-row gap-2">
                         <input id="chat-input" type="text" placeholder="Ask a legal question…" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" onkeypress="if(event.key==='Enter') handleSendMessage()"/>
                         ${Btn(`${lucideIcons.Send} Send`, 'handleSendMessage()', 'bg-indigo-700 text-white border-indigo-700 hover:bg-indigo-800 shadow-md')}
                     </div>
@@ -518,7 +549,7 @@
 
             return `
                 ${Card(`
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
                         <h3 class="text-lg font-semibold text-gray-700">Comments on ${draft.title}</h3>
                         <div class="flex gap-2">
                             ${filteredSentiment ? Btn(`${lucideIcons.Filter} Show All`, `setFilteredSentimentAndTab(null, 'comments')`) : ''}
@@ -553,7 +584,7 @@
                                     <th class="py-3 px-4 font-semibold">Comment</th>
                                     <th class="py-3 px-4 font-semibold">Sentiment</th>
                                     <th class="py-3 px-4 font-semibold">Date</th>
-                                    <th class="py-3 px-4 rounded-tr-xl font-semibold"></th>
+                                    <th class="py-3 px-4 rounded-tr-xl font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -591,24 +622,24 @@
 
             return `
                 ${Card(`
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
                         <h3 class="text-lg font-semibold text-gray-700">Analytics for ${draft.title}</h3>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                         <div class="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                            <p class="text-3xl font-bold text-gray-800">7.2 / 10</p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-800">7.2 / 10</p>
                             <p class="text-xs text-gray-500 uppercase mt-1">Avg. sentiment</p>
                         </div>
                         <div class="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                            <p class="text-3xl font-bold text-gray-800">68 %</p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-800">68 %</p>
                             <p class="text-xs text-gray-500 uppercase mt-1">Response rate</p>
                         </div>
                         <div class="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                            <p class="text-3xl font-bold text-gray-800">Healthcare</p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-800">Healthcare</p>
                             <p class="text-xs text-gray-500 uppercase mt-1">Top topic</p>
                         </div>
                         <div class="p-4 bg-teal-50 rounded-xl border border-teal-200">
-                            <p class="text-3xl font-bold text-teal-700">&uarr; 23 %</p>
+                            <p class="text-2xl sm:text-3xl font-bold text-teal-700">&uarr; 23 %</p>
                             <p class="text-xs text-gray-500 uppercase mt-1">Engagement</p>
                         </div>
                     </div>
@@ -620,7 +651,7 @@
                     <div id="chat-messages" class="h-72 border rounded-xl bg-gray-50 p-4 overflow-y-auto mb-4 text-sm space-y-3 shadow-inner">
                         ${draftChatHtml}
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex flex-col sm:flex-row gap-2">
                         <input id="chat-input" type="text" placeholder="Ask about laws…" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" onkeypress="if(event.key==='Enter') handleSendMessage()"/>
                         ${Btn(`${lucideIcons.Send} Send`, 'handleSendMessage()', 'bg-indigo-700 text-white border-indigo-700 hover:bg-indigo-800 shadow-md')}
                     </div>
@@ -641,7 +672,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="flex justify-center gap-3 mt-4">
+                        <div class="flex flex-wrap justify-center gap-3 mt-4">
                             ${Pill(`Pos ${posPercent} %`, '', 'bg-teal-50 text-teal-700 border border-teal-100')}
                             ${Pill(`Neg ${negPercent} %`, '', 'bg-red-50 text-red-700 border border-red-100')}
                             ${Pill(`Neu ${neuPercent} %`, '', 'bg-slate-50 text-slate-700 border border-slate-100')}
@@ -722,7 +753,18 @@
                     renderContent();
                 });
             });
-            renderDraftList();
+
+            document.getElementById('drafts-toggle').addEventListener('click', toggleDraftsMenu);
+            document.body.addEventListener('click', (event) => {
+                const draftsMenu = document.getElementById('drafts-menu');
+                const draftsToggle = document.getElementById('drafts-toggle');
+                if (isDraftsMenuOpen && !draftsMenu.contains(event.target) && !draftsToggle.contains(event.target)) {
+                    toggleDraftsMenu();
+                }
+            });
+
+            renderDraftList('draft-list-desktop');
+            renderMobileDraftMenu();
             renderContent();
         });
     </script>
