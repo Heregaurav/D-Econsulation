@@ -58,29 +58,33 @@
 
         <!-- Right area – tabs + content -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top bar -->
-            <header class="bg-white border-b border-gray-100 px-4 sm:px-8 py-4 sm:py-6 shadow-sm flex items-center justify-between flex-wrap gap-4">
+            <!-- Top bar - Now with responsive background -->
+            <header class="bg-slate-900 lg:bg-white border-b border-gray-200 px-4 sm:px-8 py-4 sm:py-6 shadow-sm flex items-center justify-between flex-wrap gap-4">
                 <div class="flex items-center gap-4">
                     <!-- Mobile dropdown for drafts -->
                     <div class="lg:hidden relative">
-                        <button id="drafts-toggle" class="px-4 py-2 text-sm rounded-xl font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+                        <button id="drafts-toggle" class="px-4 py-2 text-sm rounded-xl font-medium bg-slate-700 text-slate-300 hover:bg-slate-800 transition-colors">
                             Drafts
                             <svg class="ml-1 w-4 h-4 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                         </button>
-                        <div id="drafts-menu" class="absolute z-50 top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 hidden">
+                        <div id="drafts-menu" class="absolute z-50 top-full left-0 mt-2 w-56 bg-slate-800 rounded-lg shadow-xl border border-slate-700 hidden">
                             <!-- Draft list will be rendered here via JS -->
                         </div>
                     </div>
-                    <div>
+                    <!-- New mobile-specific heading, hidden on large screens -->
+                    <h2 class="lg:hidden text-lg sm:text-2xl font-bold text-white">E-Consultation</h2>
+                    <!-- Original dynamic heading for larger screens -->
+                    <div class="hidden lg:block">
                         <h2 id="draft-title" class="text-lg sm:text-2xl font-bold text-gray-800"></h2>
                         <p id="draft-dates" class="text-xs sm:text-sm text-gray-500 mt-1"></p>
                     </div>
                 </div>
-                <nav class="flex flex-wrap justify-center gap-2 p-1 bg-gray-100 rounded-xl">
+                <!-- Tabs - Adjusted for both dark and light backgrounds -->
+                <nav class="flex flex-wrap justify-center gap-2 p-1 bg-slate-800 lg:bg-gray-100 rounded-xl">
                     <button id="tab-dashboard" data-tab="dashboard" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors bg-indigo-700 text-white shadow-md hover:bg-indigo-800">Dashboard</button>
-                    <button id="tab-comments" data-tab="comments" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors text-gray-600 hover:bg-white">Comments</button>
-                    <button id="tab-analytics" data-tab="analytics" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors text-gray-600 hover:bg-white">Analytics</button>
-                    <button id="tab-settings" data-tab="settings" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors text-gray-600 hover:bg-white">Settings</button>
+                    <button id="tab-comments" data-tab="comments" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors text-slate-300 lg:text-gray-600 hover:bg-slate-700 lg:hover:bg-gray-200">Comments</button>
+                    <button id="tab-analytics" data-tab="analytics" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors text-slate-300 lg:text-gray-600 hover:bg-slate-700 lg:hover:bg-gray-200">Analytics</button>
+                    <button id="tab-settings" data-tab="settings" class="px-3 sm:px-5 py-2 text-sm rounded-lg font-medium transition-colors text-slate-300 lg:text-gray-600 hover:bg-slate-700 lg:hover:bg-gray-200">Settings</button>
                 </nav>
             </header>
 
@@ -337,7 +341,7 @@
                     <div onclick="setActiveDraft(${d.id})" class="p-4 cursor-pointer transition-all duration-300 rounded-lg mx-4 mb-2
                         ${isActive ? 'bg-slate-700 shadow-lg border border-indigo-500' : 'hover:bg-slate-800 hover:shadow-md'}"
                     >
-                        <h3 class="font-semibold text-white">${d.title}</h3>
+                        <h3 class="font-semibold text-white">E-Consultation</h3>
                         <p class="text-xs text-slate-400 mt-1">${d.description}</p>
                         <p class="text-[11px] text-slate-500 mt-2">${d.startDate} &rarr; ${d.endDate}</p>
                     </div>
@@ -362,7 +366,7 @@
         function renderMobileDraftMenu() {
             const menuEl = document.getElementById('drafts-menu');
             const menuItemsHtml = drafts.map(d => `
-                <div onclick="setActiveDraft(${d.id})" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
+                <div onclick="setActiveDraft(${d.id})" class="block px-4 py-3 text-sm text-white hover:bg-slate-700 cursor-pointer">
                     ${d.title}
                 </div>
             `).join('');
@@ -652,7 +656,7 @@
                         ${draftChatHtml}
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2">
-                        <input id="chat-input" type="text" placeholder="Ask about laws…" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" onkeypress="if(event.key==='Enter') handleSendMessage()"/>
+                        <input id="chat-input" type="text" placeholder="Ask a legal question…" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" onkeypress="if(event.key==='Enter') handleSendMessage()"/>
                         ${Btn(`${lucideIcons.Send} Send`, 'handleSendMessage()', 'bg-indigo-700 text-white border-indigo-700 hover:bg-indigo-800 shadow-md')}
                     </div>
                 `, 'mb-6')}
@@ -713,10 +717,10 @@
             document.querySelectorAll('nav button').forEach(button => {
                 if (button.dataset.tab === activeTab) {
                     button.classList.add('bg-indigo-700', 'text-white', 'shadow-md', 'hover:bg-indigo-800');
-                    button.classList.remove('text-gray-600', 'hover:bg-white');
+                    button.classList.remove('text-slate-300', 'lg:text-gray-600', 'hover:bg-slate-700', 'lg:hover:bg-gray-200');
                 } else {
                     button.classList.remove('bg-indigo-700', 'text-white', 'shadow-md', 'hover:bg-indigo-800');
-                    button.classList.add('text-gray-600', 'hover:bg-white');
+                    button.classList.add('text-slate-300', 'lg:text-gray-600', 'hover:bg-slate-700', 'lg:hover:bg-gray-200');
                 }
             });
         }
